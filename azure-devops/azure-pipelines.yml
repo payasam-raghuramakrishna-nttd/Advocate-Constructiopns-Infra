@@ -8,19 +8,25 @@ variables:
 - group: vg-cus-advocate-dev
 
 stages:
-
 - stage: Terraform_Validate_Plan_Dev
   displayName: Terraform Validate and Plan DEV
+
   jobs:
   - job: Terraform_DEV_Plan
+
     steps:
     - script: |
+        TERRAFORM_VERSION="1.8.5"
+
         sudo apt-get update
-        sudo apt-get install -y gnupg software-properties-common curl
-        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-        sudo apt-get update
-        sudo apt-get install -y terraform
+        sudo apt-get install -y unzip wget
+
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+        sudo mv terraform /usr/local/bin/
+
         terraform -version
       displayName: Install Terraform
 
@@ -34,19 +40,27 @@ stages:
           terraform validate
           terraform plan -var-file=environments/dev/dev.tfvars
 
+
 - stage: Terraform_Apply_Dev
   displayName: Terraform Apply DEV
   dependsOn: Terraform_Validate_Plan_Dev
+
   jobs:
   - job: Terraform_DEV_Apply
+
     steps:
     - script: |
+        TERRAFORM_VERSION="1.8.5"
+
         sudo apt-get update
-        sudo apt-get install -y gnupg software-properties-common curl
-        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-        sudo apt-get update
-        sudo apt-get install -y terraform
+        sudo apt-get install -y unzip wget
+
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+        sudo mv terraform /usr/local/bin/
+
         terraform -version
       displayName: Install Terraform
 
@@ -59,21 +73,30 @@ stages:
           terraform init
           terraform apply -auto-approve -var-file=environments/dev/dev.tfvars
 
+
 - stage: Terraform_Validate_Plan_Prod
   displayName: Terraform Validate and Plan PROD
   dependsOn: Terraform_Apply_Dev
+
   variables:
   - group: vg-cus-advocate-prod
+
   jobs:
   - job: Terraform_PROD_Plan
+
     steps:
     - script: |
+        TERRAFORM_VERSION="1.8.5"
+
         sudo apt-get update
-        sudo apt-get install -y gnupg software-properties-common curl
-        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-        echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-        sudo apt-get update
-        sudo apt-get install -y terraform
+        sudo apt-get install -y unzip wget
+
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+        sudo mv terraform /usr/local/bin/
+
         terraform -version
       displayName: Install Terraform
 
@@ -87,25 +110,34 @@ stages:
           terraform validate
           terraform plan -var-file=environments/prod/prod.tfvars
 
+
 - stage: Terraform_Apply_Prod
   displayName: Terraform Apply PROD
   dependsOn: Terraform_Validate_Plan_Prod
+
   variables:
   - group: vg-cus-advocate-prod
+
   jobs:
   - deployment: Terraform_PROD_Apply
     environment: PROD
+
     strategy:
       runOnce:
         deploy:
           steps:
           - script: |
+              TERRAFORM_VERSION="1.8.5"
+
               sudo apt-get update
-              sudo apt-get install -y gnupg software-properties-common curl
-              curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-              echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-              sudo apt-get update
-              sudo apt-get install -y terraform
+              sudo apt-get install -y unzip wget
+
+              wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+              unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+
+              sudo mv terraform /usr/local/bin/
+
               terraform -version
             displayName: Install Terraform
 
