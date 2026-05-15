@@ -1,0 +1,70 @@
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+- group: terraform-variables
+
+stages:
+
+- stage: Terraform_Deploy_Dev
+  displayName: Deploy DEV
+
+  jobs:
+  - job: Terraform_DEV
+
+    steps:
+
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: latest
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'Azure-Service-Connection'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+
+          terraform init
+
+          terraform validate
+
+          terraform plan           -var-file=environments/dev/dev.tfvars
+
+          terraform apply -auto-approve           -var-file=environments/dev/dev.tfvars
+
+- stage: Terraform_Deploy_Prod
+  displayName: Deploy PROD
+  dependsOn: Terraform_Deploy_Dev
+
+  jobs:
+  - deployment: Terraform_PROD
+    environment: PROD
+
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: latest
+
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: 'Azure-Service-Connection'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+
+                terraform init
+
+                terraform validate
+
+                terraform plan                 -var-file=environments/prod/prod.tfvars
+
+                terraform apply -auto-approve                 -var-file=environments/prod/prod.tfvars
