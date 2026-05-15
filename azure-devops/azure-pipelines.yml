@@ -1,4 +1,3 @@
-
 trigger:
 - main
 
@@ -6,65 +5,91 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-- group: terraform-variables
+- group: vg-cus-advocate-dev
 
 stages:
 
-- stage: Terraform_Deploy_Dev
-  displayName: Deploy DEV
-
+- stage: Terraform_Validate_Plan_Dev
+  displayName: Terraform Validate and Plan DEV
   jobs:
-  - job: Terraform_DEV
-
+  - job: Terraform_DEV_Plan
     steps:
-
     - task: TerraformInstaller@1
       inputs:
-        terraformVersion: latest
+        terraformVersion: '1.8.5'
 
     - task: AzureCLI@2
       inputs:
-        azureSubscription: 'Azure-Service-Connection'
+        azureSubscription: 'sc-cus-advocate-azure'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-
           terraform init
-
           terraform validate
+          terraform plan -var-file=environments/dev/dev.tfvars
 
-          terraform plan           -var-file=environments/dev/dev.tfvars
-
-          terraform apply -auto-approve           -var-file=environments/dev/dev.tfvars
-
-- stage: Terraform_Deploy_Prod
-  displayName: Deploy PROD
-  dependsOn: Terraform_Deploy_Dev
-
+- stage: Terraform_Apply_Dev
+  displayName: Terraform Apply DEV
+  dependsOn: Terraform_Validate_Plan_Dev
   jobs:
-  - deployment: Terraform_PROD
-    environment: PROD
+  - job: Terraform_DEV_Apply
+    steps:
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: '1.8.5'
 
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'sc-cus-advocate-azure'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          terraform init
+          terraform apply -auto-approve -var-file=environments/dev/dev.tfvars
+
+- stage: Terraform_Validate_Plan_Prod
+  displayName: Terraform Validate and Plan PROD
+  dependsOn: Terraform_Apply_Dev
+  variables:
+  - group: vg-cus-advocate-prod
+  jobs:
+  - job: Terraform_PROD_Plan
+    steps:
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: '1.8.5'
+
+    - task: AzureCLI@2
+      inputs:
+        azureSubscription: 'sc-cus-advocate-azure'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          terraform init
+          terraform validate
+          terraform plan -var-file=environments/prod/prod.tfvars
+
+- stage: Terraform_Apply_Prod
+  displayName: Terraform Apply PROD
+  dependsOn: Terraform_Validate_Plan_Prod
+  variables:
+  - group: vg-cus-advocate-prod
+  jobs:
+  - deployment: Terraform_PROD_Apply
+    environment: PROD
     strategy:
       runOnce:
         deploy:
           steps:
-
           - task: TerraformInstaller@1
             inputs:
-              terraformVersion: latest
+              terraformVersion: '1.8.5'
 
           - task: AzureCLI@2
             inputs:
-              azureSubscription: 'Azure-Service-Connection'
+              azureSubscription: 'sc-cus-advocate-azure'
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
-
                 terraform init
-
-                terraform validate
-
-                terraform plan                 -var-file=environments/prod/prod.tfvars
-
-                terraform apply -auto-approve                 -var-file=environments/prod/prod.tfvars
+                terraform apply -auto-approve -var-file=environments/prod/prod.tfvars
