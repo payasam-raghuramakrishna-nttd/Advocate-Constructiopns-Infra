@@ -10,6 +10,15 @@ variables:
 stages:
 - stage: Terraform_Validate_Plan_Dev
   displayName: Terraform Validate and Plan DEV
+  variables:
+  - name: backend_resource_group
+    value: rg-dev-enterprise-001
+  - name: backend_storage_account
+    value: stadvodevcusinfra
+  - name: backend_container
+    value: tfstate
+  - name: backend_key
+    value: dev/Advocate-Construction-Infra.tfstate
 
   jobs:
   - job: Terraform_DEV_Plan
@@ -36,14 +45,27 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          terraform init
+          terraform init -reconfigure \
+            -backend-config="resource_group_name=$(backend_resource_group)" \
+            -backend-config="storage_account_name=$(backend_storage_account)" \
+            -backend-config="container_name=$(backend_container)" \
+            -backend-config="key=$(backend_key)"
           terraform validate
-          terraform plan -var-file=environments/dev/dev.tfvars
+          terraform plan -var-file=environments/dev/dev.tfvars -out=tfplan-dev
 
 
 - stage: Terraform_Apply_Dev
   displayName: Terraform Apply DEV
   dependsOn: Terraform_Validate_Plan_Dev
+  variables:
+  - name: backend_resource_group
+    value: rg-dev-enterprise-001
+  - name: backend_storage_account
+    value: stadvodevcusinfra
+  - name: backend_container
+    value: tfstate
+  - name: backend_key
+    value: dev/Advocate-Construction-Infra.tfstate
 
   jobs:
   - job: Terraform_DEV_Apply
@@ -70,7 +92,11 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          terraform init
+          terraform init -reconfigure \
+            -backend-config="resource_group_name=$(backend_resource_group)" \
+            -backend-config="storage_account_name=$(backend_storage_account)" \
+            -backend-config="container_name=$(backend_container)" \
+            -backend-config="key=$(backend_key)"
           terraform apply -auto-approve -var-file=environments/dev/dev.tfvars
 
 
@@ -80,6 +106,14 @@ stages:
 
   variables:
   - group: vg-cus-advocate-prod
+  - name: backend_resource_group
+    value: rg-prod-enterprise-001
+  - name: backend_storage_account
+    value: stadvoprdcusinfra
+  - name: backend_container
+    value: tfstate
+  - name: backend_key
+    value: prod/Advocate-Construction-Infra.tfstate
 
   jobs:
   - job: Terraform_PROD_Plan
@@ -106,9 +140,13 @@ stages:
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript: |
-          terraform init
+          terraform init -reconfigure \
+            -backend-config="resource_group_name=$(backend_resource_group)" \
+            -backend-config="storage_account_name=$(backend_storage_account)" \
+            -backend-config="container_name=$(backend_container)" \
+            -backend-config="key=$(backend_key)"
           terraform validate
-          terraform plan -var-file=environments/prod/prod.tfvars
+          terraform plan -var-file=environments/prod/prod.tfvars -out=tfplan-prod
 
 
 - stage: Terraform_Apply_Prod
@@ -117,6 +155,14 @@ stages:
 
   variables:
   - group: vg-cus-advocate-prod
+  - name: backend_resource_group
+    value: rg-prod-enterprise-001
+  - name: backend_storage_account
+    value: stadvoprdcusinfra
+  - name: backend_container
+    value: tfstate
+  - name: backend_key
+    value: prod/Advocate-Construction-Infra.tfstate
 
   jobs:
   - deployment: Terraform_PROD_Apply
@@ -147,5 +193,9 @@ stages:
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
-                terraform init
+                terraform init -reconfigure \
+                  -backend-config="resource_group_name=$(backend_resource_group)" \
+                  -backend-config="storage_account_name=$(backend_storage_account)" \
+                  -backend-config="container_name=$(backend_container)" \
+                  -backend-config="key=$(backend_key)"
                 terraform apply -auto-approve -var-file=environments/prod/prod.tfvars
