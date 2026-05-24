@@ -44,14 +44,16 @@ stages:
         azureSubscription: 'sc-cus-advocate-azure'
         scriptType: bash
         scriptLocation: inlineScript
+        workingDirectory: '$(Build.SourcesDirectory)'
         inlineScript: |
-          terraform init -reconfigure \
+          set -euo pipefail
+          terraform init -input=false -reconfigure \
             -backend-config="resource_group_name=$(backend_resource_group)" \
             -backend-config="storage_account_name=$(backend_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
           terraform validate
-          terraform plan -var-file=environments/dev/dev.tfvars -out=tfplan-dev
+          terraform plan -input=false -var-file=environments/dev/dev.tfvars -out=tfplan-dev
 
 
 - stage: Terraform_Apply_Dev
@@ -91,13 +93,15 @@ stages:
         azureSubscription: 'sc-cus-advocate-azure'
         scriptType: bash
         scriptLocation: inlineScript
+        workingDirectory: '$(Build.SourcesDirectory)'
         inlineScript: |
-          terraform init -reconfigure \
+          set -euo pipefail
+          terraform init -input=false -reconfigure \
             -backend-config="resource_group_name=$(backend_resource_group)" \
             -backend-config="storage_account_name=$(backend_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
-          terraform apply -auto-approve -var-file=environments/dev/dev.tfvars
+          terraform apply -input=false -auto-approve -var-file=environments/dev/dev.tfvars
 
 
 - stage: Terraform_Validate_Plan_Prod
@@ -139,14 +143,16 @@ stages:
         azureSubscription: 'sc-cus-advocate-azure'
         scriptType: bash
         scriptLocation: inlineScript
+        workingDirectory: '$(Build.SourcesDirectory)'
         inlineScript: |
-          terraform init -reconfigure \
+          set -euo pipefail
+          terraform init -input=false -reconfigure \
             -backend-config="resource_group_name=$(backend_resource_group)" \
             -backend-config="storage_account_name=$(backend_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
           terraform validate
-          terraform plan -var-file=environments/prod/prod.tfvars -out=tfplan-prod
+          terraform plan -input=false -var-file=environments/prod/prod.tfvars -out=tfplan-prod
 
 
 - stage: Terraform_Apply_Prod
@@ -192,10 +198,12 @@ stages:
               azureSubscription: 'sc-cus-advocate-azure'
               scriptType: bash
               scriptLocation: inlineScript
+              workingDirectory: '$(Build.SourcesDirectory)'
               inlineScript: |
-                terraform init -reconfigure \
+                set -euo pipefail
+                terraform init -input=false -reconfigure \
                   -backend-config="resource_group_name=$(backend_resource_group)" \
                   -backend-config="storage_account_name=$(backend_storage_account)" \
                   -backend-config="container_name=$(backend_container)" \
                   -backend-config="key=$(backend_key)"
-                terraform apply -auto-approve -var-file=environments/prod/prod.tfvars
+                terraform apply -input=false -auto-approve -var-file=environments/prod/prod.tfvars
