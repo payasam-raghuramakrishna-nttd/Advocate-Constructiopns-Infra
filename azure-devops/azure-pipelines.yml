@@ -24,19 +24,9 @@ stages:
   - job: Terraform_DEV_Plan
  
     steps:
-    - script: |
-        TERRAFORM_VERSION="1.8.5"
- 
-        sudo apt-get update
-        sudo apt-get install -y unzip wget
- 
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
- 
-        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
- 
-        sudo mv terraform /usr/local/bin/
- 
-        terraform -version
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: '1.8.5'
       displayName: Install Terraform
  
     - task: AzureCLI@2
@@ -78,19 +68,9 @@ stages:
   - job: Terraform_DEV_Apply
  
     steps:
-    - script: |
-        TERRAFORM_VERSION="1.8.5"
- 
-        sudo apt-get update
-        sudo apt-get install -y unzip wget
- 
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
- 
-        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
- 
-        sudo mv terraform /usr/local/bin/
- 
-        terraform -version
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: '1.8.5'
       displayName: Install Terraform
  
     - task: AzureCLI@2
@@ -133,19 +113,9 @@ stages:
   - job: Terraform_PROD_Plan
  
     steps:
-    - script: |
-        TERRAFORM_VERSION="1.8.5"
- 
-        sudo apt-get update
-        sudo apt-get install -y unzip wget
- 
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
- 
-        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
- 
-        sudo mv terraform /usr/local/bin/
- 
-        terraform -version
+    - task: TerraformInstaller@0
+      inputs:
+        terraformVersion: '1.8.5'
       displayName: Install Terraform
  
     - task: AzureCLI@2
@@ -193,19 +163,9 @@ stages:
       runOnce:
         deploy:
           steps:
-          - script: |
-              TERRAFORM_VERSION="1.8.5"
- 
-              sudo apt-get update
-              sudo apt-get install -y unzip wget
- 
-              wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
- 
-              unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
- 
-              sudo mv terraform /usr/local/bin/
- 
-              terraform -version
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: '1.8.5'
             displayName: Install Terraform
  
           - task: AzureCLI@2
