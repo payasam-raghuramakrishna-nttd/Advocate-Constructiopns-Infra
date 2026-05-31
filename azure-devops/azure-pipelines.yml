@@ -34,11 +34,13 @@ stages:
  
     steps:
     - script: |
+        set -euo pipefail
         TERRAFORM_VERSION="1.8.5"
         sudo apt-get update
         sudo apt-get install -y unzip wget
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
-        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+        TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+        wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
+        unzip -o "${TERRAFORM_ZIP}"
         sudo mv terraform /usr/local/bin/
         terraform -version
       displayName: Install Terraform
@@ -84,11 +86,13 @@ stages:
  
     steps:
     - script: |
+        set -euo pipefail
         TERRAFORM_VERSION="1.8.5"
         sudo apt-get update
         sudo apt-get install -y unzip wget
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
-        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+        TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+        wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
+        unzip -o "${TERRAFORM_ZIP}"
         sudo mv terraform /usr/local/bin/
         terraform -version
       displayName: Install Terraform
@@ -134,11 +138,13 @@ stages:
  
     steps:
     - script: |
+        set -euo pipefail
         TERRAFORM_VERSION="1.8.5"
         sudo apt-get update
         sudo apt-get install -y unzip wget
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
-        unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+        TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+        wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
+        unzip -o "${TERRAFORM_ZIP}"
         sudo mv terraform /usr/local/bin/
         terraform -version
       displayName: Install Terraform
@@ -190,11 +196,13 @@ stages:
         deploy:
           steps:
           - script: |
+              set -euo pipefail
               TERRAFORM_VERSION="1.8.5"
               sudo apt-get update
               sudo apt-get install -y unzip wget
-              wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
-              unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+              TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+              wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
+              unzip -o "${TERRAFORM_ZIP}"
               sudo mv terraform /usr/local/bin/
               terraform -version
             displayName: Install Terraform
