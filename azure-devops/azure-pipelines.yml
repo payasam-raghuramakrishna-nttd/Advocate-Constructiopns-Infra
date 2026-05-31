@@ -1,6 +1,14 @@
 trigger:
 - main
  
+parameters:
+- name: targetEnv
+  type: string
+  default: dev
+  values:
+  - dev
+  - prod
+ 
 pool:
   vmImage: ubuntu-latest
  
@@ -10,6 +18,7 @@ variables:
 stages:
 - stage: Terraform_Validate_Plan_Dev
   displayName: Terraform Validate and Plan DEV
+  condition: eq(parameters.targetEnv, 'dev')
   variables:
   - name: backend_resource_group
     value: rg-dev-enterprise-001
@@ -28,7 +37,7 @@ stages:
         TERRAFORM_VERSION="1.8.5"
         sudo apt-get update
         sudo apt-get install -y unzip wget
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
         unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
         sudo mv terraform /usr/local/bin/
         terraform -version
@@ -58,6 +67,7 @@ stages:
  
 - stage: Terraform_Apply_Dev
   displayName: Terraform Apply DEV
+  condition: eq(parameters.targetEnv, 'dev')
   dependsOn: Terraform_Validate_Plan_Dev
   variables:
   - name: backend_resource_group
@@ -77,7 +87,7 @@ stages:
         TERRAFORM_VERSION="1.8.5"
         sudo apt-get update
         sudo apt-get install -y unzip wget
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
         unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
         sudo mv terraform /usr/local/bin/
         terraform -version
@@ -106,7 +116,7 @@ stages:
  
 - stage: Terraform_Validate_Plan_Prod
   displayName: Terraform Validate and Plan PROD
-  dependsOn: Terraform_Apply_Dev
+  condition: eq(parameters.targetEnv, 'prod')
  
   variables:
   - group: vg-cus-advocate-prod
@@ -127,7 +137,7 @@ stages:
         TERRAFORM_VERSION="1.8.5"
         sudo apt-get update
         sudo apt-get install -y unzip wget
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
         unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
         sudo mv terraform /usr/local/bin/
         terraform -version
@@ -157,6 +167,7 @@ stages:
  
 - stage: Terraform_Apply_Prod
   displayName: Terraform Apply PROD
+  condition: eq(parameters.targetEnv, 'prod')
   dependsOn: Terraform_Validate_Plan_Prod
  
   variables:
@@ -182,7 +193,7 @@ stages:
               TERRAFORM_VERSION="1.8.5"
               sudo apt-get update
               sudo apt-get install -y unzip wget
-              wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+              wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
               unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
               sudo mv terraform /usr/local/bin/
               terraform -version
