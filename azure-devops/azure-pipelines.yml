@@ -1,12 +1,12 @@
 trigger:
 - main
-
+ 
 pool:
   vmImage: ubuntu-latest
-
+ 
 variables:
 - group: vg-cus-advocate-dev
-
+ 
 stages:
 - stage: Terraform_Validate_Plan_Dev
   displayName: Terraform Validate and Plan DEV
@@ -19,27 +19,32 @@ stages:
     value: tfstate
   - name: backend_key
     value: dev/Advocate-Construction-Infra.tfstate
-
+ 
   jobs:
   - job: Terraform_DEV_Plan
-
+ 
     steps:
     - script: |
         TERRAFORM_VERSION="1.8.5"
-
+ 
         sudo apt-get update
         sudo apt-get install -y unzip wget
-
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-
+ 
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
+ 
         unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-
+ 
         sudo mv terraform /usr/local/bin/
-
+ 
         terraform -version
       displayName: Install Terraform
-
+ 
     - task: AzureCLI@2
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
         azureSubscription: 'sc-cus-advocate-azure'
         scriptType: bash
@@ -54,8 +59,8 @@ stages:
             -backend-config="key=$(backend_key)"
           terraform validate
           terraform plan -input=false -var-file=environments/dev/dev.tfvars -out=tfplan-dev
-
-
+ 
+ 
 - stage: Terraform_Apply_Dev
   displayName: Terraform Apply DEV
   dependsOn: Terraform_Validate_Plan_Dev
@@ -68,27 +73,32 @@ stages:
     value: tfstate
   - name: backend_key
     value: dev/Advocate-Construction-Infra.tfstate
-
+ 
   jobs:
   - job: Terraform_DEV_Apply
-
+ 
     steps:
     - script: |
         TERRAFORM_VERSION="1.8.5"
-
+ 
         sudo apt-get update
         sudo apt-get install -y unzip wget
-
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-
+ 
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
+ 
         unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-
+ 
         sudo mv terraform /usr/local/bin/
-
+ 
         terraform -version
       displayName: Install Terraform
-
+ 
     - task: AzureCLI@2
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
         azureSubscription: 'sc-cus-advocate-azure'
         scriptType: bash
@@ -102,12 +112,12 @@ stages:
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
           terraform apply -input=false -auto-approve -var-file=environments/dev/dev.tfvars
-
-
+ 
+ 
 - stage: Terraform_Validate_Plan_Prod
   displayName: Terraform Validate and Plan PROD
   dependsOn: Terraform_Apply_Dev
-
+ 
   variables:
   - group: vg-cus-advocate-prod
   - name: backend_resource_group
@@ -118,27 +128,32 @@ stages:
     value: tfstate
   - name: backend_key
     value: prod/Advocate-Construction-Infra.tfstate
-
+ 
   jobs:
   - job: Terraform_PROD_Plan
-
+ 
     steps:
     - script: |
         TERRAFORM_VERSION="1.8.5"
-
+ 
         sudo apt-get update
         sudo apt-get install -y unzip wget
-
-        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-
+ 
+        wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
+ 
         unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-
+ 
         sudo mv terraform /usr/local/bin/
-
+ 
         terraform -version
       displayName: Install Terraform
-
+ 
     - task: AzureCLI@2
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
         azureSubscription: 'sc-cus-advocate-azure'
         scriptType: bash
@@ -153,12 +168,12 @@ stages:
             -backend-config="key=$(backend_key)"
           terraform validate
           terraform plan -input=false -var-file=environments/prod/prod.tfvars -out=tfplan-prod
-
-
+ 
+ 
 - stage: Terraform_Apply_Prod
   displayName: Terraform Apply PROD
   dependsOn: Terraform_Validate_Plan_Prod
-
+ 
   variables:
   - group: vg-cus-advocate-prod
   - name: backend_resource_group
@@ -169,31 +184,36 @@ stages:
     value: tfstate
   - name: backend_key
     value: prod/Advocate-Construction-Infra.tfstate
-
+ 
   jobs:
   - deployment: Terraform_PROD_Apply
     environment: PROD
-
+ 
     strategy:
       runOnce:
         deploy:
           steps:
           - script: |
               TERRAFORM_VERSION="1.8.5"
-
+ 
               sudo apt-get update
               sudo apt-get install -y unzip wget
-
-              wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-
+ 
+              wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_…
+ 
               unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-
+ 
               sudo mv terraform /usr/local/bin/
-
+ 
               terraform -version
             displayName: Install Terraform
-
+ 
           - task: AzureCLI@2
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
             inputs:
               azureSubscription: 'sc-cus-advocate-azure'
               scriptType: bash
