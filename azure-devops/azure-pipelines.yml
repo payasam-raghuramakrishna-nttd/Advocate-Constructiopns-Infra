@@ -1,6 +1,8 @@
 trigger:
 - main
- 
+
+pr: none
+
 parameters:
 - name: targetEnv
   type: string
@@ -11,10 +13,14 @@ parameters:
  
 pool:
   vmImage: ubuntu-latest
- 
+
 variables:
+- name: terraformVersion
+  value: "1.8.5"
+- name: serviceConnection
+  value: "sc-cus-advocate-azure"
 - group: vg-cus-advocate-dev
- 
+
 stages:
 - stage: Terraform_Validate_Plan_Dev
   displayName: Terraform Validate and Plan DEV
@@ -31,20 +37,12 @@ stages:
  
   jobs:
   - job: Terraform_DEV_Plan
- 
+
     steps:
-    - script: |
-        set -euo pipefail
-        TERRAFORM_VERSION="1.8.5"
-        sudo apt-get update
-        sudo apt-get install -y unzip wget
-        TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
-        wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
-        unzip -o "${TERRAFORM_ZIP}"
-        sudo mv terraform /usr/local/bin/
-        terraform -version
-      displayName: Install Terraform
- 
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: $(terraformVersion)
+
     - task: AzureCLI@2
       env:
         ARM_CLIENT_ID: $(ARM_CLIENT_ID)
@@ -52,7 +50,7 @@ stages:
         ARM_TENANT_ID: $(ARM_TENANT_ID)
         ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
-        azureSubscription: 'sc-cus-advocate-azure'
+        azureSubscription: $(serviceConnection)
         scriptType: bash
         scriptLocation: inlineScript
         workingDirectory: '$(Build.SourcesDirectory)'
@@ -64,9 +62,13 @@ stages:
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
           terraform validate
-          terraform plan -input=false -var-file=environments/dev/dev.tfvars -out=tfplan-dev
- 
- 
+          terraform plan -input=false -var-file=environments/dev/dev.tfvars -out=tfplan
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)/tfplan'
+        artifact: 'tfplan-dev'
+
 - stage: Terraform_Apply_Dev
   displayName: Terraform Apply DEV
   condition: and(succeeded(), eq('${{ parameters.targetEnv }}', 'dev'))
@@ -83,20 +85,17 @@ stages:
  
   jobs:
   - job: Terraform_DEV_Apply
- 
+
     steps:
-    - script: |
-        set -euo pipefail
-        TERRAFORM_VERSION="1.8.5"
-        sudo apt-get update
-        sudo apt-get install -y unzip wget
-        TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
-        wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
-        unzip -o "${TERRAFORM_ZIP}"
-        sudo mv terraform /usr/local/bin/
-        terraform -version
-      displayName: Install Terraform
- 
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: $(terraformVersion)
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: 'tfplan-dev'
+        path: '$(Pipeline.Workspace)/tfplan-dev'
+
     - task: AzureCLI@2
       env:
         ARM_CLIENT_ID: $(ARM_CLIENT_ID)
@@ -104,7 +103,7 @@ stages:
         ARM_TENANT_ID: $(ARM_TENANT_ID)
         ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
-        azureSubscription: 'sc-cus-advocate-azure'
+        azureSubscription: $(serviceConnection)
         scriptType: bash
         scriptLocation: inlineScript
         workingDirectory: '$(Build.SourcesDirectory)'
@@ -115,13 +114,12 @@ stages:
             -backend-config="storage_account_name=$(backend_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
-          terraform apply -input=false -auto-approve -var-file=environments/dev/dev.tfvars
- 
- 
+          terraform apply -input=false -auto-approve "$(Pipeline.Workspace)/tfplan-dev/tfplan"
+
 - stage: Terraform_Validate_Plan_Prod
   displayName: Terraform Validate and Plan PROD
   condition: and(succeeded(), eq('${{ parameters.targetEnv }}', 'prod'))
- 
+
   variables:
   - group: vg-cus-advocate-prod
   - name: backend_resource_group
@@ -135,20 +133,12 @@ stages:
  
   jobs:
   - job: Terraform_PROD_Plan
- 
+
     steps:
-    - script: |
-        set -euo pipefail
-        TERRAFORM_VERSION="1.8.5"
-        sudo apt-get update
-        sudo apt-get install -y unzip wget
-        TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
-        wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
-        unzip -o "${TERRAFORM_ZIP}"
-        sudo mv terraform /usr/local/bin/
-        terraform -version
-      displayName: Install Terraform
- 
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: $(terraformVersion)
+
     - task: AzureCLI@2
       env:
         ARM_CLIENT_ID: $(ARM_CLIENT_ID)
@@ -156,7 +146,7 @@ stages:
         ARM_TENANT_ID: $(ARM_TENANT_ID)
         ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
-        azureSubscription: 'sc-cus-advocate-azure'
+        azureSubscription: $(serviceConnection)
         scriptType: bash
         scriptLocation: inlineScript
         workingDirectory: '$(Build.SourcesDirectory)'
@@ -168,14 +158,18 @@ stages:
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
           terraform validate
-          terraform plan -input=false -var-file=environments/prod/prod.tfvars -out=tfplan-prod
- 
- 
+          terraform plan -input=false -var-file=environments/prod/prod.tfvars -out=tfplan
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.SourcesDirectory)/tfplan'
+        artifact: 'tfplan-prod'
+
 - stage: Terraform_Apply_Prod
   displayName: Terraform Apply PROD
   condition: and(succeeded(), eq('${{ parameters.targetEnv }}', 'prod'))
   dependsOn: Terraform_Validate_Plan_Prod
- 
+
   variables:
   - group: vg-cus-advocate-prod
   - name: backend_resource_group
@@ -190,23 +184,20 @@ stages:
   jobs:
   - deployment: Terraform_PROD_Apply
     environment: PROD
- 
+
     strategy:
       runOnce:
         deploy:
           steps:
-          - script: |
-              set -euo pipefail
-              TERRAFORM_VERSION="1.8.5"
-              sudo apt-get update
-              sudo apt-get install -y unzip wget
-              TERRAFORM_ZIP="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
-              wget -q "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
-              unzip -o "${TERRAFORM_ZIP}"
-              sudo mv terraform /usr/local/bin/
-              terraform -version
-            displayName: Install Terraform
- 
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: $(terraformVersion)
+
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifact: 'tfplan-prod'
+              path: '$(Pipeline.Workspace)/tfplan-prod'
+
           - task: AzureCLI@2
             env:
               ARM_CLIENT_ID: $(ARM_CLIENT_ID)
@@ -214,7 +205,7 @@ stages:
               ARM_TENANT_ID: $(ARM_TENANT_ID)
               ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
             inputs:
-              azureSubscription: 'sc-cus-advocate-azure'
+              azureSubscription: $(serviceConnection)
               scriptType: bash
               scriptLocation: inlineScript
               workingDirectory: '$(Build.SourcesDirectory)'
@@ -225,4 +216,4 @@ stages:
                   -backend-config="storage_account_name=$(backend_storage_account)" \
                   -backend-config="container_name=$(backend_container)" \
                   -backend-config="key=$(backend_key)"
-                terraform apply -input=false -auto-approve -var-file=environments/prod/prod.tfvars
+                terraform apply -input=false -auto-approve "$(Pipeline.Workspace)/tfplan-prod/tfplan"
