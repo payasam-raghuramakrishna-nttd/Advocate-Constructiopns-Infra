@@ -1,5 +1,4 @@
 trigger: none
-
 pr: none
 
 parameters:
@@ -9,7 +8,7 @@ parameters:
   values:
   - dev
   - prod
- 
+
 pool:
   vmImage: ubuntu-latest
 
@@ -20,9 +19,11 @@ variables:
   value: "sc-cus-advocate-azure"
 
 stages:
+
 - stage: Terraform_Validate_Plan_Dev
   displayName: Terraform Validate and Plan DEV
-  condition: and(succeeded(), eq('${{ parameters.targetEnv }}', 'dev'))
+  dependsOn: []
+  condition: eq('${{ parameters.targetEnv }}', 'dev')
   variables:
   - group: vg-cus-advocate-dev
   - name: backend_resource_group
@@ -33,28 +34,13 @@ stages:
     value: tfstate
   - name: backend_key
     value: dev/Advocate-Construction-Infra.tfstate
- 
+
   jobs:
   - job: Terraform_DEV_Plan
-
     steps:
-    - script: |
-        set -euo pipefail
-        sudo apt-get update
-        sudo apt-get install -y unzip wget
-        TERRAFORM_ZIP="terraform_$(terraformVersion)_linux_amd64.zip"
-        wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
-        unzip -o "${TERRAFORM_ZIP}"
-        sudo mv terraform /usr/local/bin/
-        terraform -version
-      displayName: Install Terraform
+    - template: azure-devops/templates/install-terraform.yml
 
     - task: AzureCLI@2
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
         azureSubscription: $(serviceConnection)
         scriptType: bash
@@ -70,15 +56,14 @@ stages:
           terraform validate
           terraform plan -input=false -var-file=environments/dev/dev.tfvars -out=tfplan
 
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.SourcesDirectory)/tfplan'
-        artifact: 'tfplan-dev'
+    - publish: '$(Build.SourcesDirectory)/tfplan'
+      artifact: tfplan-dev
+
 
 - stage: Terraform_Apply_Dev
   displayName: Terraform Apply DEV
-  condition: and(succeeded(), eq('${{ parameters.targetEnv }}', 'dev'))
   dependsOn: Terraform_Validate_Plan_Dev
+  condition: and(succeeded(), eq('${{ parameters.targetEnv }}', 'dev'))
   variables:
   - group: vg-cus-advocate-dev
   - name: backend_resource_group
@@ -89,33 +74,16 @@ stages:
     value: tfstate
   - name: backend_key
     value: dev/Advocate-Construction-Infra.tfstate
- 
+
   jobs:
   - job: Terraform_DEV_Apply
-
     steps:
-    - script: |
-        set -euo pipefail
-        sudo apt-get update
-        sudo apt-get install -y unzip wget
-        TERRAFORM_ZIP="terraform_$(terraformVersion)_linux_amd64.zip"
-        wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
-        unzip -o "${TERRAFORM_ZIP}"
-        sudo mv terraform /usr/local/bin/
-        terraform -version
-      displayName: Install Terraform
+    - template: azure-devops/templates/install-terraform.yml
 
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: 'tfplan-dev'
-        path: '$(Pipeline.Workspace)/tfplan-dev'
+    - download: current
+      artifact: tfplan-dev
 
     - task: AzureCLI@2
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
         azureSubscription: $(serviceConnection)
         scriptType: bash
@@ -130,10 +98,11 @@ stages:
             -backend-config="key=$(backend_key)"
           terraform apply -input=false -auto-approve "$(Pipeline.Workspace)/tfplan-dev/tfplan"
 
+
 - stage: Terraform_Validate_Plan_Prod
   displayName: Terraform Validate and Plan PROD
-  condition: and(succeeded(), eq('${{ parameters.targetEnv }}', 'prod'))
-
+  dependsOn: []
+  condition: eq('${{ parameters.targetEnv }}', 'prod')
   variables:
   - group: vg-cus-advocate-prod
   - name: backend_resource_group
@@ -144,32 +113,13 @@ stages:
     value: tfstate
   - name: backend_key
     value: prod/Advocate-Construction-Infra.tfstate
-  - name: prod_app_service_plan_name
-    value: asp-prod-enterprise-001
-  - name: prod_webapp_name
-    value: webapp-adv-prd-cus-infra
- 
+
   jobs:
   - job: Terraform_PROD_Plan
-
     steps:
-    - script: |
-        set -euo pipefail
-        sudo apt-get update
-        sudo apt-get install -y unzip wget
-        TERRAFORM_ZIP="terraform_$(terraformVersion)_linux_amd64.zip"
-        wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
-        unzip -o "${TERRAFORM_ZIP}"
-        sudo mv terraform /usr/local/bin/
-        terraform -version
-      displayName: Install Terraform
+    - template: azure-devops/templates/install-terraform.yml
 
     - task: AzureCLI@2
-      env:
-        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-        ARM_TENANT_ID: $(ARM_TENANT_ID)
-        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
         azureSubscription: $(serviceConnection)
         scriptType: bash
@@ -182,35 +132,17 @@ stages:
             -backend-config="storage_account_name=$(backend_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
-
-          # Import existing prod web resources into state if they were created manually.
-          ASP_ID="/subscriptions/${ARM_SUBSCRIPTION_ID}/resourceGroups/$(backend_resource_group)/providers/Microsoft.Web/serverfarms/$(prod_app_service_plan_name)"
-          WEBAPP_ID="/subscriptions/${ARM_SUBSCRIPTION_ID}/resourceGroups/$(backend_resource_group)/providers/Microsoft.Web/sites/$(prod_webapp_name)"
-
-          if az resource show --ids "$ASP_ID" >/dev/null 2>&1; then
-            if ! terraform state list | grep -q '^module.app_service_plan.azurerm_service_plan.asp$'; then
-              terraform import -input=false module.app_service_plan.azurerm_service_plan.asp "$ASP_ID"
-            fi
-          fi
-
-          if az resource show --ids "$WEBAPP_ID" >/dev/null 2>&1; then
-            if ! terraform state list | grep -q '^module.webapp.azurerm_linux_web_app.webapp$'; then
-              terraform import -input=false module.webapp.azurerm_linux_web_app.webapp "$WEBAPP_ID"
-            fi
-          fi
-
           terraform validate
           terraform plan -input=false -var-file=environments/prod/prod.tfvars -out=tfplan
 
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Build.SourcesDirectory)/tfplan'
-        artifact: 'tfplan-prod'
+    - publish: '$(Build.SourcesDirectory)/tfplan'
+      artifact: tfplan-prod
+
 
 - stage: Terraform_Apply_Prod
   displayName: Terraform Apply PROD
-  condition: and(succeeded(), eq('${{ parameters.targetEnv }}', 'prod'))
   dependsOn: Terraform_Validate_Plan_Prod
+  condition: and(succeeded(), eq('${{ parameters.targetEnv }}', 'prod'))
 
   variables:
   - group: vg-cus-advocate-prod
@@ -222,37 +154,20 @@ stages:
     value: tfstate
   - name: backend_key
     value: prod/Advocate-Construction-Infra.tfstate
- 
+
   jobs:
   - deployment: Terraform_PROD_Apply
     environment: PROD
-
     strategy:
       runOnce:
         deploy:
           steps:
-          - script: |
-              set -euo pipefail
-              sudo apt-get update
-              sudo apt-get install -y unzip wget
-              TERRAFORM_ZIP="terraform_$(terraformVersion)_linux_amd64.zip"
-              wget -q "https://releases.hashicorp.com/terraform/$(terraformVersion)/${TERRAFORM_ZIP}" -O "${TERRAFORM_ZIP}"
-              unzip -o "${TERRAFORM_ZIP}"
-              sudo mv terraform /usr/local/bin/
-              terraform -version
-            displayName: Install Terraform
+          - template: azure-devops/templates/install-terraform.yml
 
-          - task: DownloadPipelineArtifact@2
-            inputs:
-              artifact: 'tfplan-prod'
-              path: '$(Pipeline.Workspace)/tfplan-prod'
+          - download: current
+            artifact: tfplan-prod
 
           - task: AzureCLI@2
-            env:
-              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
-              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
-              ARM_TENANT_ID: $(ARM_TENANT_ID)
-              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
             inputs:
               azureSubscription: $(serviceConnection)
               scriptType: bash
