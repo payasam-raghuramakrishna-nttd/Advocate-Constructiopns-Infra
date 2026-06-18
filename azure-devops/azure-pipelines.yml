@@ -61,6 +61,15 @@ stages:
             -backend-config="storage_account_name=$(backend_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
+
+          # Import existing resource group into state when created outside Terraform.
+          DEV_RG_ID="/subscriptions/${ARM_SUBSCRIPTION_ID}/resourceGroups/$(backend_resource_group)"
+          if az group show --name "$(backend_resource_group)" >/dev/null 2>&1; then
+            if ! terraform state list | grep -q '^azurerm_resource_group.main$'; then
+              terraform import -input=false azurerm_resource_group.main "$DEV_RG_ID"
+            fi
+          fi
+
           terraform validate
           terraform plan -input=false -var-file=environments/dev/dev.tfvars -out=tfplan
 
@@ -124,6 +133,10 @@ stages:
     value: tfstate
   - name: backend_key
     value: prod/Advocate-Construction-Infra.tfstate
+  - name: prod_app_service_plan_name
+    value: asp-prod-enterprise-001
+  - name: prod_webapp_name
+    value: webapp-adv-prd-cus-infra
 
   jobs:
   - job: Terraform_PROD_Plan
@@ -148,6 +161,30 @@ stages:
             -backend-config="storage_account_name=$(backend_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
+
+          # Import existing PROD resources into state when created outside Terraform.
+          PROD_RG_ID="/subscriptions/${ARM_SUBSCRIPTION_ID}/resourceGroups/$(backend_resource_group)"
+          ASP_ID="${PROD_RG_ID}/providers/Microsoft.Web/serverfarms/$(prod_app_service_plan_name)"
+          WEBAPP_ID="${PROD_RG_ID}/providers/Microsoft.Web/sites/$(prod_webapp_name)"
+
+          if az group show --name "$(backend_resource_group)" >/dev/null 2>&1; then
+            if ! terraform state list | grep -q '^azurerm_resource_group.main$'; then
+              terraform import -input=false azurerm_resource_group.main "$PROD_RG_ID"
+            fi
+          fi
+
+          if az resource show --ids "$ASP_ID" >/dev/null 2>&1; then
+            if ! terraform state list | grep -q '^module.app_service_plan.azurerm_service_plan.asp$'; then
+              terraform import -input=false module.app_service_plan.azurerm_service_plan.asp "$ASP_ID"
+            fi
+          fi
+
+          if az resource show --ids "$WEBAPP_ID" >/dev/null 2>&1; then
+            if ! terraform state list | grep -q '^module.webapp.azurerm_linux_web_app.webapp$'; then
+              terraform import -input=false module.webapp.azurerm_linux_web_app.webapp "$WEBAPP_ID"
+            fi
+          fi
+
           terraform validate
           terraform plan -input=false -var-file=environments/prod/prod.tfvars -out=tfplan
 
