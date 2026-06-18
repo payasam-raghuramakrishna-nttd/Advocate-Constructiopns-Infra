@@ -44,6 +44,11 @@ stages:
     - template: templates/install-terraform.yml
 
     - task: AzureCLI@2
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
         azureSubscription: $(serviceConnection)
         scriptType: bash
@@ -86,6 +91,11 @@ stages:
       artifact: tfplan-dev
 
     - task: AzureCLI@2
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
         azureSubscription: $(serviceConnection)
         scriptType: bash
@@ -121,6 +131,11 @@ stages:
     - template: templates/install-terraform.yml
 
     - task: AzureCLI@2
+      env:
+        ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+        ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+        ARM_TENANT_ID: $(ARM_TENANT_ID)
+        ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
       inputs:
         azureSubscription: $(serviceConnection)
         scriptType: bash
@@ -168,6 +183,11 @@ stages:
             artifact: tfplan-prod
 
           - task: AzureCLI@2
+            env:
+              ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+              ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+              ARM_TENANT_ID: $(ARM_TENANT_ID)
+              ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
             inputs:
               azureSubscription: $(serviceConnection)
               scriptType: bash
