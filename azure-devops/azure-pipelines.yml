@@ -60,6 +60,9 @@ stages:
         workingDirectory: '$(Build.SourcesDirectory)'
         inlineScript: |
           set -euo pipefail
+          DEV_TFVARS="$(Build.SourcesDirectory)/environments/dev/dev.tfvars"
+          AUTO_TFVARS="$(Build.SourcesDirectory)/pipeline.auto.tfvars"
+
           terraform init -input=false -reconfigure \
             -backend-config="resource_group_name=$(backend_state_resource_group)" \
             -backend-config="storage_account_name=$(backend_state_storage_account)" \
@@ -74,8 +77,10 @@ stages:
             fi
           fi
 
+          cp "$DEV_TFVARS" "$AUTO_TFVARS"
           terraform validate
-          terraform plan -input=false -var-file=environments/dev/dev.tfvars -out=tfplan
+          terraform plan -input=false -var-file="$DEV_TFVARS" -out=tfplan
+          rm -f "$AUTO_TFVARS"
 
     - publish: '$(Build.SourcesDirectory)/tfplan'
       artifact: tfplan-dev
@@ -120,6 +125,9 @@ stages:
         workingDirectory: '$(Build.SourcesDirectory)'
         inlineScript: |
           set -euo pipefail
+          PROD_TFVARS="$(Build.SourcesDirectory)/environments/prod/prod.tfvars"
+          AUTO_TFVARS="$(Build.SourcesDirectory)/pipeline.auto.tfvars"
+
           terraform init -input=false -reconfigure \
             -backend-config="resource_group_name=$(backend_state_resource_group)" \
             -backend-config="storage_account_name=$(backend_state_storage_account)" \
@@ -197,8 +205,10 @@ stages:
             fi
           fi
 
+          cp "$PROD_TFVARS" "$AUTO_TFVARS"
           terraform validate
-          terraform plan -input=false -var-file=environments/prod/prod.tfvars -out=tfplan
+          terraform plan -input=false -var-file="$PROD_TFVARS" -out=tfplan
+          rm -f "$AUTO_TFVARS"
 
     - publish: '$(Build.SourcesDirectory)/tfplan'
       artifact: tfplan-prod
