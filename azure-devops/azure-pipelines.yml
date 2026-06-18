@@ -33,6 +33,10 @@ stages:
     value: rg-dev-enterprise-001
   - name: backend_storage_account
     value: stadvodevcusinfra
+  - name: backend_state_resource_group
+    value: rg-dev-enterprise-001
+  - name: backend_state_storage_account
+    value: stadvodevcusinfra
   - name: backend_container
     value: tfstate
   - name: backend_key
@@ -57,8 +61,8 @@ stages:
         inlineScript: |
           set -euo pipefail
           terraform init -input=false -reconfigure \
-            -backend-config="resource_group_name=$(backend_resource_group)" \
-            -backend-config="storage_account_name=$(backend_storage_account)" \
+            -backend-config="resource_group_name=$(backend_state_resource_group)" \
+            -backend-config="storage_account_name=$(backend_state_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
 
@@ -85,6 +89,10 @@ stages:
   - name: backend_resource_group
     value: rg-dev-enterprise-001
   - name: backend_storage_account
+    value: stadvodevcusinfra
+  - name: backend_state_resource_group
+    value: rg-dev-enterprise-001
+  - name: backend_state_storage_account
     value: stadvodevcusinfra
   - name: backend_container
     value: tfstate
@@ -113,8 +121,8 @@ stages:
         inlineScript: |
           set -euo pipefail
           terraform init -input=false -reconfigure \
-            -backend-config="resource_group_name=$(backend_resource_group)" \
-            -backend-config="storage_account_name=$(backend_storage_account)" \
+            -backend-config="resource_group_name=$(backend_state_resource_group)" \
+            -backend-config="storage_account_name=$(backend_state_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
           terraform apply -input=false -auto-approve "$(Pipeline.Workspace)/tfplan-dev/tfplan"
@@ -129,6 +137,10 @@ stages:
     value: rg-prod-enterprise-001
   - name: backend_storage_account
     value: stadvoprdcusinfra
+  - name: backend_state_resource_group
+    value: rg-dev-enterprise-001
+  - name: backend_state_storage_account
+    value: stadvodevcusinfra
   - name: backend_container
     value: tfstate
   - name: backend_key
@@ -157,8 +169,8 @@ stages:
         inlineScript: |
           set -euo pipefail
           terraform init -input=false -reconfigure \
-            -backend-config="resource_group_name=$(backend_resource_group)" \
-            -backend-config="storage_account_name=$(backend_storage_account)" \
+            -backend-config="resource_group_name=$(backend_state_resource_group)" \
+            -backend-config="storage_account_name=$(backend_state_storage_account)" \
             -backend-config="container_name=$(backend_container)" \
             -backend-config="key=$(backend_key)"
 
@@ -202,6 +214,10 @@ stages:
     value: rg-prod-enterprise-001
   - name: backend_storage_account
     value: stadvoprdcusinfra
+  - name: backend_state_resource_group
+    value: rg-dev-enterprise-001
+  - name: backend_state_storage_account
+    value: stadvodevcusinfra
   - name: backend_container
     value: tfstate
   - name: backend_key
@@ -233,8 +249,8 @@ stages:
               inlineScript: |
                 set -euo pipefail
                 terraform init -input=false -reconfigure \
-                  -backend-config="resource_group_name=$(backend_resource_group)" \
-                  -backend-config="storage_account_name=$(backend_storage_account)" \
+                  -backend-config="resource_group_name=$(backend_state_resource_group)" \
+                  -backend-config="storage_account_name=$(backend_state_storage_account)" \
                   -backend-config="container_name=$(backend_container)" \
                   -backend-config="key=$(backend_key)"
                 terraform apply -input=false -auto-approve "$(Pipeline.Workspace)/tfplan-prod/tfplan"
