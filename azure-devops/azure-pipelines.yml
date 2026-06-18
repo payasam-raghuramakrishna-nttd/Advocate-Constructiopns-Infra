@@ -38,7 +38,7 @@ stages:
   jobs:
   - job: Terraform_DEV_Plan
     steps:
-    - template: azure-devops/templates/install-terraform.yml
+    - template: templates/install-terraform.yml
 
     - task: AzureCLI@2
       inputs:
@@ -77,7 +77,7 @@ stages:
   jobs:
   - job: Terraform_DEV_Apply
     steps:
-    - template: azure-devops/templates/install-terraform.yml
+    - template: templates/install-terraform.yml
 
     - download: current
       artifact: tfplan-dev
@@ -115,7 +115,7 @@ stages:
   jobs:
   - job: Terraform_PROD_Plan
     steps:
-    - template: azure-devops/templates/install-terraform.yml
+    - template: templates/install-terraform.yml
 
     - task: AzureCLI@2
       inputs:
@@ -159,7 +159,7 @@ stages:
       runOnce:
         deploy:
           steps:
-          - template: azure-devops/templates/install-terraform.yml
+          - template: templates/install-terraform.yml
 
           - download: current
             artifact: tfplan-prod
